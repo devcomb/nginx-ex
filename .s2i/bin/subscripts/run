@@ -1,0 +1,11 @@
+#!/bin/bash
+
+set -e
+
+if [ "$NAME" = "nginx" ]; then
+    echo "---> Running nginx application source"
+    /tmp/scripts/nginx-run
+else
+    echo "---> Running web application source"
+    /tmp/scripts/webapp-run
+fi
