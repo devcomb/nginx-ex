@@ -9,3 +9,9 @@ Node.js and OAuth Proxy both use [Openshift's Service Account](https://docs.open
 Node.js OAuth and Nginx server applications are meant to be run in a seperate namespace than Nginx client. This allows for Nginx client to be used in different namespaces(projects) and modified per to meet particular namespace application proxy needs. Nginx client in the repository should be considered a template while Node.js OAuth and Nginx server applications should not require any changes. Except currently service account in server namespace will require adding additional redirect urls for Openshift's backend authentication to communicate with. Eventually it is planned to provide a mechanism to automatically update the service account from the client using possibly a private and public key setup as an option.
 
 This README is still a work in progress. Example use case and additional documentation to follow.
+
+Copyright (c) 2019 James Drummond
+This program and the accompanying materials are made
+available under the terms of the Eclipse Public License 2.0
+which is available at https://www.eclipse.org/legal/epl-2.0/
+SPDX-License-Identifier: EPL-2.0

@@ -1,3 +1,13 @@
+/*********************************************************************
+* Copyright (c) 2019 James Drummond
+*
+* This program and the accompanying materials are made
+* available under the terms of the Eclipse Public License 2.0
+* which is available at https://www.eclipse.org/legal/epl-2.0/
+*
+* SPDX-License-Identifier: EPL-2.0
+**********************************************************************/
+
 //Following is to convert all file in folder from dos format to unix.
 //Is an issue with Theia where files are create in dos format
 'use strict'
@@ -16,3 +26,4 @@ const dos2unix = require('ssp-dos2unix-js').dos2unix
         }); 
     }
 });
+
