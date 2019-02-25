@@ -4,28 +4,14 @@
 
 Although Nginx can split traffic based on header information received back from [OAuth Proxy for OpenShift](https://github.com/openshift/oauth-proxy) it lacks the ability to get useful information about the user authenticated by OAuth Proxy. Node.js server application was created to provide Nginx additional information for the user creditials(email/username) passed back from OAuth Proxy. 
 
-Node.js and OAuth Proxy both use [Openshift's Service Account](https://docs.openshift.com/container-platform/3.11/admin_guide/service_accounts.html) to gain access to Openshift's authentication backend and user creditials. Service accounts can be easily created by any user per namespace(project). Limited information about the user is passed from Openshift's backend authentication and OAuth Proxy such as username/email. With username/email information the Node.js application can use a service account to access membership information for that particular namespace's user [rolebindings](https://docs.openshift.com/container-platform/3.11/architecture/additional_concepts/authorization.html) through OpenShift's REST api calls. Node.js will then send response back to Nginx client on if the requesting user has particular role and proxy user accordingly.
+Node.js and OAuth Proxy both use [Openshift's Service Account](https://docs.openshift.com/container-platform/3.11/admin_guide/service_accounts.html) to gain access to Openshift's authentication backend and user creditials. Service accounts can be easily created by any user per namespace(project). Limited information about the user is passed from Openshift's backend authentication and OAuth Proxy such as username/email. With username/email information the Node.js application can use a service account to access membership information for that particular user namespace's [rolebindings](https://docs.openshift.com/container-platform/3.11/architecture/additional_concepts/authorization.html) through OpenShift's REST api calls. Node.js will then send response back to Nginx client on if the requesting user has particular role and proxy user accordingly.
 
+Node.js OAuth and Nginx server applications are meant to be run in a seperate namespace than Nginx client. This allows for Nginx client to be used in different namespaces(projects) and modified per to meet particular namespace application proxy needs. Nginx client in the repository should be considered a template while Node.js OAuth and Nginx server applications should not require any changes. Except currently service account in server namespace will require adding additional redirect urls for Openshift's backend authentication to communicate with. Eventually it is planned to provide a mechanism to automatically update the service account from the client using possibly a private and public key setup as an option.
 
+This README is still a work in progress. Example use case and additional documentation to follow.
 
-This is a very basic sample application repository that can be built and deployed
-on [OpenShift](https://www.openshift.com) using the [Nginx HTTP server and a reverse proxy builder image](https://github.com/sclorg/nginx-container).
-
-The application serves a single static html page via nginx.
-
-To build and run the application:
-
-```
-$ s2i build https://github.com/sclorg/nginx-ex centos/nginx-112-centos7 mynginximage
-$ docker run -p 8080:8080 mynginximage
-$ # browse to http://localhost:8080
-```
-
-You can also build and deploy the application on OpenShift, assuming you have a
-working `oc` command line environment connected to your cluster already:
-
-`$ oc new-app centos/nginx-112-centos7~https://github.com/sclorg/nginx-ex`
-
-You can also deploy the sample template for the application:
-
-`$ oc new-app -f https://raw.githubusercontent.com/sclorg/nginx-ex/master/openshift/templates/nginx.json`
+Copyright (c) 2019 James Drummond
+This program and the accompanying materials are made
+available under the terms of the Eclipse Public License 2.0
+which is available at https://www.eclipse.org/legal/epl-2.0/
+SPDX-License-Identifier: EPL-2.0

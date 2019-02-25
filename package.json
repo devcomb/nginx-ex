@@ -3,6 +3,8 @@
   "version": "1.0.0",
   "description": "Nginx Backend",
   "main": "index.js",
+  "author": "james@devcomb.com",
+  "license": "EPL-2.0",
   "scripts": {
     "start": "node index.js ",
     "test": "NODE_MODE=test ./node_modules/.bin/mocha test.js"
@@ -11,8 +13,6 @@
     "type": "git",
     "url": "git+https://github.com/devcomb/nginx-ex.git"
   },
-  "author": "james@devcomb.com",
-  "license": "EPL-2.0",
   "bugs": {
     "url": "https://github.com/devcomb/nginx-ex/issues"
   },
