@@ -4,6 +4,7 @@ source /opt/app-root/etc/generate_container_user
 set -e
 source ${NGINX_CONTAINER_SCRIPTS_PATH}/common.sh
 process_extending_files ${NGINX_APP_ROOT}/src/nginx-start ${NGINX_CONTAINER_SCRIPTS_PATH}/nginx-start
+
 exec nginx -g "daemon off;"
 
 # Copyright (c) 2019 James Drummond
@@ -11,3 +12,4 @@ exec nginx -g "daemon off;"
 # available under the terms of the Eclipse Public License 2.0
 # which is available at https://www.eclipse.org/legal/epl-2.0/
 # SPDX-License-Identifier: EPL-2.0
+
