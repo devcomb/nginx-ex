@@ -30,6 +30,7 @@ shopt -s dotglob
 echo "---> Installing application source ..."
 mv /tmp/src/* ./
 
+
 if [ ! -z $HTTP_PROXY ]; then
     echo "---> Setting npm http proxy to" $(safeLogging $HTTP_PROXY)
         npm config set proxy $HTTP_PROXY
@@ -74,7 +75,10 @@ if [ "$NODE_ENV" != "production" ]; then
 
         echo "---> Building your Node application from source"
         npm install
-
+        if [[ -e /tmp/scripts/assemble && -d ./.s2i/bin ]]; then
+            echo "---> Copy over automatically removed ./.s2i/bin/assemble file."
+            cp -Rf /tmp/scripts/assemble ./.s2i/bin/
+        fi
 else
 
         echo "---> Installing all dependencies"
