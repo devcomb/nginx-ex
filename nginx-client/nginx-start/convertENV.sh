@@ -4,6 +4,7 @@ export OAUTH_AUTH_SERVER=$(curl https://${KUBERNETES_SERVICE_HOST}/.well-known/o
 export OS_CONSOLE_HOST="$(python -c "from urlparse import urlparse;print(urlparse('https://console.devcomb.com:8443').hostname)")"
 export OS_CONSOLE_PORT="$(python -c "from urlparse import urlparse;print(urlparse('https://console.devcomb.com:8443').port)")"
 export NAMESERVER=$(echo $(awk 'BEGIN{ORS=" "} $1=="nameserver" {print $2}' /etc/resolv.conf) )
+export NAMESPACE=$(cat /var/run/secrets/kubernetes.io/serviceaccount/namespace)
 envsubst '${APPWEB1_ADDR},${APPWEB2_ADDR},${APPWEB3_ADDR}'< ${NGINX_CONFIGURATION_PATH}/upstream.conf > ${NGINX_CONFIGURATION_PATH}/upstream.conf
 envsubst '${AUTH_HOST},${REMOTE_WEBAPP_HOST},${GROUP_AUTH_HOST},${NAMESPACE},${SA_TOKEN},${OS_CONSOLE_HOST},${OS_CONSOLE_PORT},${GROUP_REQ}' < ${NGINX_CONFIGURATION_PATH}/subdomains.conf > ${NGINX_CONFIGURATION_PATH}/subdomains.conf
 echo 1 > /tmp/health
