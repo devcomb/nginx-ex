@@ -1,0 +1,313 @@
+apiVersion: v1
+items:
+- apiVersion: v1
+  kind: Service
+  metadata:
+    name: oauth-interface-nginx
+  spec:
+    ports:
+    - name: 8080-tcp
+      port: 8080
+      protocol: TCP
+      targetPort: 8080
+    selector:
+      name: oauth-interface-nginx
+- apiVersion: v1
+  kind: Service
+  metadata:
+    name: oauth-interface-nodejs
+  spec:
+    ports:
+    - name: 8080-tcp
+      port: 8080
+      protocol: TCP
+      targetPort: 8080
+    selector:
+      deploymentconfig: oauth-interface-nodejs
+- apiVersion: v1
+  kind: Service
+  metadata:
+    name: oauth-interface-proxy
+  spec:
+    ports:
+    - name: oauth-interface-proxy
+      port: 4180
+      protocol: TCP
+      targetPort: 4180
+    selector:
+      name: oauth-interface-proxy
+- apiVersion: apps.openshift.io/v1
+  kind: DeploymentConfig
+  metadata:
+    annotations:
+      description: Nginx proxy with authentication based routing
+      template.alpha.openshift.io/wait-for-ready: "true"
+    labels:
+        app: oauth-interface
+    name: oauth-interface-nginx
+  spec:
+    replicas: 1
+    selector:
+      name: oauth-interface-nginx
+    strategy:
+      type: Rolling
+    template:
+      metadata:
+        labels:
+          name: oauth-interface-nginx
+          deploymentconfig: oauth-interface-nginx
+      spec:
+        containers:
+        - env:
+          - name: APPWEB4_ADDR
+            value: oauth-interface-proxy:4180
+          imagePullPolicy: IfNotPresent
+          name: oauth-interface-nginx
+          ports:
+          - containerPort: 8080
+            protocol: TCP
+          readinessProbe:
+            exec:
+              command:
+              - cat
+              - /tmp/health
+            failureThreshold: 3
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 10
+          resources:
+            limits:
+              cpu: 40m
+              memory: 100Mi
+    triggers:
+    - imageChangeParams:
+        automatic: true
+        containerNames:
+        - oauth-interface-nginx
+        from:
+          kind: ImageStreamTag
+          name: oauth-interface-nginx:latest
+      type: ImageChange
+    - type: ConfigChange
+- apiVersion: apps.openshift.io/v1
+  kind: DeploymentConfig
+  metadata:
+    labels:
+        app: oauth-interface
+    name: oauth-interface-nodejs
+  spec:
+    replicas: 1
+    selector:
+      deploymentconfig: oauth-interface-nodejs
+    strategy:
+      type: Rolling
+    template:
+      metadata:
+        labels:
+          name: oauth-interface-nodejs
+          deploymentconfig: oauth-interface-nodejs
+      spec:
+        containers:
+        - env:
+          - name: HOSTS_WHITELISTED
+            value: console.devcomb.com
+          - name: PORTS_WHITELISTED
+            value: "8443"
+          imagePullPolicy: Always
+          name: oauth-interface-nodejs
+          ports:
+          - containerPort: 8080
+            protocol: TCP
+          resources:
+            limits:
+              cpu: 50m
+              memory: 512Mi
+            requests:
+              cpu: 50m
+    triggers:
+    - imageChangeParams:
+        automatic: true
+        containerNames:
+        - oauth-interface-nodejs
+        from:
+          kind: ImageStreamTag
+          name: oauth-interface-nodejs:latest
+      type: ImageChange
+    - type: ConfigChange
+- apiVersion: apps.openshift.io/v1
+  kind: DeploymentConfig
+  metadata:
+    annotations:
+      description: Defines how to deploy the application server
+      template.alpha.openshift.io/wait-for-ready: "true"
+    name: oauth-interface-proxy
+    labels:
+        app: oauth-interface
+  spec:
+    replicas: 1
+    selector:
+      name: oauth-interface-proxy
+    strategy:
+      type: Rolling
+    template:
+      metadata:
+        labels:
+          name: oauth-interface-proxy
+          deploymentconfig: oauth-interface-proxy
+      spec:
+        containers:
+        - args:
+          - --http-address=:4180
+          - --provider=openshift
+          - --openshift-service-account=oauth-interface-nginx
+          - --cookie-secret=neoldwbiwlmfxlygyqlj
+          - --cookie-secure=false
+          - --cookie-name=_oauth2proxy
+          - --set-xauthrequest
+          - --upstream=http://oauth-interface-nginx:8080
+          - --request-logging=true
+          - --tls-cert=/etc/tls/private/tls.crt
+          - --tls-key=/etc/tls/private/tls.key
+          image: docker.io/openshift/oauth-proxy:latest
+          imagePullPolicy: IfNotPresent
+          name: oauth-proxy
+          ports:
+          - containerPort: 4180
+            name: public
+            protocol: TCP
+          resources:
+            limits:
+              cpu: 10m
+              memory: 100Mi
+          volumeMounts:
+          - mountPath: /etc/tls/private
+            name: proxy-tls
+        volumes:
+        - name: proxy-tls
+          secret:
+            defaultMode: 420
+            secretName: proxy-tls
+    test: false
+    triggers:
+    - type: ConfigChange
+- apiVersion: build.openshift.io/v1
+  kind: BuildConfig
+  metadata:
+    name: oauth-interface-nginx
+  spec:
+    output:
+      to:
+        kind: ImageStreamTag
+        name: oauth-interface-nginx:latest
+    runPolicy: Serial
+    source:
+      git:
+        ref: development
+        uri: https://github.com/devcomb/nginx-ex.git
+      type: Git
+    strategy:
+      sourceStrategy:
+        from:
+          kind: ImageStreamTag
+          name: nginx:1.12
+          namespace: openshift
+      type: Source
+    triggers:
+    - imageChangeParams:
+        automatic: true
+        containerNames:
+        - oauth-interface-nginx
+        from:
+          kind: ImageStreamTag
+          name: oauth-interface-nginx:latest
+      type: ImageChange
+    - type: ConfigChange
+- apiVersion: build.openshift.io/v1
+  kind: BuildConfig
+  metadata:
+    name: oauth-interface-nodejs
+  spec:
+    output:
+      to:
+        kind: ImageStreamTag
+        name: oauth-interface-nodejs:latest
+    runPolicy: Serial
+    source:
+      git:
+        ref: development
+        uri: https://github.com/devcomb/nginx-ex.git
+      type: Git
+    strategy:
+      sourceStrategy:
+        from:
+          kind: ImageStreamTag
+          name: nodejs:10
+          namespace: openshift
+      type: Source
+    triggers:
+    - imageChangeParams:
+        automatic: true
+        containerNames:
+        - oauth-interface-nodejs
+        from:
+          kind: ImageStreamTag
+          name: oauth-interface-nodejs:latest
+      type: ImageChange
+    - type: ConfigChange
+- apiVersion: image.openshift.io/v1
+  kind: ImageStream
+  metadata:
+    annotations:
+      description: Keeps track of changes in the application image
+    generation: 1
+    name: oauth-interface-nginx
+  spec:
+    lookupPolicy:
+      local: false
+- apiVersion: image.openshift.io/v1
+  kind: ImageStream
+  metadata:
+    generation: 1
+    name: oauth-interface-nodejs
+  spec:
+    lookupPolicy:
+      local: false
+- apiVersion: route.openshift.io/v1
+  kind: Route
+  metadata:
+    annotations:
+      openshift.io/host.generated: "true"
+    labels:
+      app: oauth-interface
+    name: oauth-interface-nginx
+  spec:
+    port:
+      targetPort: 8080-tcp
+    tls:
+      termination: edge
+    to:
+      kind: Service
+      name: oauth-interface-nginx
+      weight: 100
+    wildcardPolicy: None
+- apiVersion: route.openshift.io/v1
+  kind: Route
+  metadata:
+    labels:
+      app: oauth-interface
+    name: oauth-interface-nodejs
+  spec:
+    port:
+      targetPort: 8080-tcp
+    tls:
+      termination: edge
+    to:
+      kind: Service
+      name: oauth-interface-nodejs
+      weight: 100
+    wildcardPolicy: None
+kind: List
+metadata:
+  resourceVersion: ""
+  selfLink: ""
