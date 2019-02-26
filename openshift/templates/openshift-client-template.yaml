@@ -107,17 +107,12 @@ objects:
                 value: 'nodejs-theia-development:8080'
               - name: IDE_ADDR
                 value: 'nodejs-theia-development:3000'
+              - name: GROUP_REQ
+                value: developer
               - name: AUTH_HOST
                 value: oauth-interface-nginx-okd-oauth.devcomb.com
               - name: GROUP_AUTH_HOST
                 value: 'oauth-interface-nodejs-okd-oauth.devcomb.com:443'
-              - name: SA_TOKEN
-                valueFrom:
-                  secretKeyRef:
-                    key: token
-                    name: nodejs-theia-nginx-token
-              - name: GROUP_REQ
-                value: developer
             name: nginx
             ports:
               - containerPort: 8080
