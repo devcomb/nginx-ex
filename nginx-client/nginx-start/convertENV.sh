@@ -1,8 +1,8 @@
 #!/bin/sh
 set -e
 export OAUTH_AUTH_SERVER=$(curl https://${KUBERNETES_SERVICE_HOST}/.well-known/oauth-authorization-server -ks|python -c "import sys, json; print(json.load(sys.stdin)['issuer'])") 
-export OS_CONSOLE_HOST="$(python -c "from urlparse import urlparse;print(urlparse('https://console.devcomb.com:8443').hostname)")"
-export OS_CONSOLE_PORT="$(python -c "from urlparse import urlparse;print(urlparse('https://console.devcomb.com:8443').port)")"
+export OS_CONSOLE_HOST="$(python -c "from urlparse import urlparse;print(urlparse('${OAUTH_AUTH_SERVER}').hostname)")"
+export OS_CONSOLE_PORT="$(python -c "from urlparse import urlparse;print(urlparse('${OAUTH_AUTH_SERVER}').port)")"
 export NAMESERVER=$(echo $(awk 'BEGIN{ORS=" "} $1=="nameserver" {print $2}' /etc/resolv.conf) )
 export NAMESPACE=$(cat /var/run/secrets/kubernetes.io/serviceaccount/namespace)
 envsubst '${APPWEB1_ADDR},${APPWEB2_ADDR},${APPWEB3_ADDR}'< ${NGINX_CONFIGURATION_PATH}/upstream.conf > ${NGINX_CONFIGURATION_PATH}/upstream.conf
