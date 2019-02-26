@@ -252,3 +252,35 @@ objects:
             name: 'webapp:latest'
         type: ImageChange
       - type: ConfigChange
+- apiVersion: v1
+  kind: ServiceAccount
+  metadata:
+    annotations:
+      serviceaccounts.openshift.io/oauth-redirecturi.first: "${REDIRECTURI}"
+    labels:
+      app: oauth-interface-client
+      template: oauth-interface-client
+    name: oauth-interface-nginx
+
+- apiVersion: v1
+  kind: ServiceAccount
+  metadata:
+    annotations:
+      serviceaccounts.openshift.io/oauth-redirecturi.first: "${REDIRECTURI}"
+    labels:
+      app: oauth-interface
+      template: oauth-interface
+    name: oauth-interface-nginx
+
+parameters:
+  - description: Server account redirecturi. This would be a nginx client url 'https://nginx-client-<namespace>.<domain>/oauth/callback'.
+    displayName: redirecturi
+    name: REDIRECTURI
+    required: true
+    value: 'https://nginx-client-<namespace>.<domain>/oauth/callback'
+  - description: Generate hash for cookie secret.
+    displayName: Cookie Secret
+    from: '[a-z]{20}'
+    generate: expression
+    name: COOKIE_SECRET
+    required: true
