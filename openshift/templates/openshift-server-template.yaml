@@ -28,6 +28,8 @@ items:
   kind: Service
   metadata:
     name: oauth-interface-proxy
+    annotations:
+      service.alpha.openshift.io/serving-cert-secret-name: proxy-tls
   spec:
     ports:
     - name: oauth-interface-proxy
@@ -307,6 +309,17 @@ items:
       name: oauth-interface-nodejs
       weight: 100
     wildcardPolicy: None
+- apiVersion: v1
+  imagePullSecrets:
+    - name: oauth-interface-nginx-dockercfg-2bxx8
+  kind: ServiceAccount
+  metadata:
+    annotations:
+      serviceaccounts.openshift.io/oauth-redirecturi.first: 'https://test-nginx-console.devcomb.com/oauth/callback'
+    labels:
+      app: oauth-interface
+      template: oauth-interface
+    name: oauth-interface-nginx
 kind: List
 metadata:
   resourceVersion: ""
