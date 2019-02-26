@@ -124,7 +124,7 @@ items:
           resources:
             limits:
               cpu: 50m
-              memory: 512Mi
+              memory: 50Mi
             requests:
               cpu: 50m
     triggers:
