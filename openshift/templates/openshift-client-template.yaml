@@ -178,7 +178,7 @@ objects:
             resources:
               limits:
                 cpu: 100m
-                memory: 2Gi
+                memory: 1Gi
         restartPolicy: Always
     triggers:
       - imageChangeParams:
@@ -224,7 +224,6 @@ objects:
             name: 'webapp:latest'
         type: ImageChange
       - type: ConfigChange
- 
 - apiVersion: build.openshift.io/v1
   kind: BuildConfig
   metadata:
