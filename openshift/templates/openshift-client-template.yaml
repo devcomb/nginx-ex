@@ -1,0 +1,254 @@
+apiVersion: v1
+kind: Template
+labels:
+  app: oauth-interface-client
+  template: oauth-interface-client
+metadata:
+  annotations:
+    description: Template to create project to use to interface with backend services.
+    iconClass: icon-nodejs
+    openshift.io/display-name: OpenShift Oauth Interface - Client
+    openshift.io/documentation-url: https://github.com/devcomb/nginx-cfg
+    openshift.io/long-description: This template defines resources needed to interface
+      with server already running in another namespace. 
+    openshift.io/provider-display-name: ''
+    openshift.io/support-url: ''
+    tags: nodejs,nginx,oauth,proxy
+    template.openshift.io/bindable: 'false'
+  name: oauth-interface-client
+objects:
+- apiVersion: v1
+  kind: Service
+  metadata:
+    labels:
+      app: nginx
+    name: nginx
+  spec:
+    ports:
+      - name: 8080-tcp
+        port: 8080
+        protocol: TCP
+        targetPort: 8080
+    selector:
+      name: nginx
+- apiVersion: v1
+  kind: Service
+  metadata:
+    labels:
+      app: nodejs-theia
+      template: nodejs-theia
+    name: nodejs-theia-development
+  spec:
+    ports:
+      - name: theia-dev
+        port: 3000
+        protocol: TCP
+        targetPort: 3000
+      - name: web-dev
+        port: 8080
+        protocol: TCP
+        targetPort: 8080
+    selector:
+      name: nodejs-theia-development
+- apiVersion: v1
+  kind: Service
+  metadata:
+    labels:
+      app: webapp
+      template: webapp
+    name: webapp
+  spec:
+    ports:
+      - name: web
+        port: 8080
+        protocol: TCP
+        targetPort: 8080
+    selector:
+      name: webapp
+- apiVersion: route.openshift.io/v1
+  kind: Route
+  metadata:
+    openshift.io/host.generated: 'true'
+  name: nginx
+  spec:
+    port:
+      targetPort: 8080-tcp
+    tls:
+      termination: edge
+    to:
+      kind: Service
+      name: nginx
+    wildcardPolicy: None
+- apiVersion: apps.openshift.io/v1
+  kind: DeploymentConfig
+  metadata:
+    annotations:
+      description: Nginx proxy with authentication based routing
+      template.alpha.openshift.io/wait-for-ready: 'true'
+    labels:
+      app: nginx
+    name: nginx
+  spec:
+    replicas: 1
+    selector:
+      name: nginx
+    strategy:
+      type: Rolling
+    template:
+      labels:
+        name: nginx
+      name: nginx
+      spec:
+        containers:
+          - env:
+              - name: WEBAPP_ADDR
+                value: 'webapp:8080'
+              - name: WEBAPP_DEV_ADDR
+                value: 'nodejs-theia-development:8080'
+              - name: IDE_ADDR
+                value: 'nodejs-theia-development:3000'
+              - name: AUTH_HOST
+                value: oauth-interface-nginx-okd-oauth.devcomb.com
+              - name: GROUP_AUTH_HOST
+                value: 'oauth-interface-nodejs-okd-oauth.devcomb.com:443'
+              - name: SA_TOKEN
+                valueFrom:
+                  secretKeyRef:
+                    key: token
+                    name: nodejs-theia-nginx-token
+              - name: GROUP_REQ
+                value: developer
+            name: nginx
+            ports:
+              - containerPort: 8080
+                protocol: TCP
+            readinessProbe:
+              exec:
+                command:
+                  - cat
+                  - /tmp/health
+              failureThreshold: 3
+              initialDelaySeconds: 5
+              periodSeconds: 10
+              successThreshold: 1
+              timeoutSeconds: 10
+            resources:
+              limits:
+                cpu: 20m
+                memory: 100Mi
+    triggers:
+      - imageChangeParams:
+          automatic: true
+          containerNames:
+            - nginx
+          from:
+            kind: ImageStreamTag
+            name: 'nginx:latest'
+        type: ImageChange
+      - type: ConfigChange
+- apiVersion: apps.openshift.io/v1
+  kind: DeploymentConfig
+  metadata:
+    annotations:
+      template.alpha.openshift.io/wait-for-ready: 'true'
+    labels:
+      app: nodejs-theia
+      template: nodejs-theia
+    name: nodejs-theia-development
+  spec:
+    replicas: 1
+    selector:
+      name: nodejs-theia-development
+    strategy:
+      type: Rolling
+    template:
+      metadata:
+        labels:
+          name: nodejs-theia-development
+        name: nodejs-theia-development
+      spec:
+        containers:
+          - env:
+              - name: SEC_PROC
+                value: 'false'
+              - name: DEV_MODE
+                value: 'true'
+            imagePullPolicy: IfNotPresent
+            name: nodejs-theia-development
+            ports:
+              - containerPort: 8080
+                protocol: TCP
+            resources:
+              limits:
+                cpu: 100m
+                memory: 2Gi
+        restartPolicy: Always
+    triggers:
+      - imageChangeParams:
+          automatic: true
+          containerNames:
+            - nodejs-theia-development
+          from:
+            kind: ImageStreamTag
+            name: 'nodejs-theia-development:latest'
+        type: ImageChange
+      - type: ConfigChange
+- apiVersion: apps.openshift.io/v1
+  kind: DeploymentConfig
+  metadata:
+    annotations:
+      template.alpha.openshift.io/wait-for-ready: 'true'
+    labels:
+      app: webapp
+      template: webapp
+    name: webapp
+  spec:
+    replicas: 1
+    selector:
+      name: webapp
+    strategy:
+      type: Rolling
+    template:
+      metadata:
+        labels:
+          name: webapp
+        name: webapp
+      spec:
+        containers:
+            imagePullPolicy: IfNotPresent
+            livenessProbe:
+              failureThreshold: 3
+              httpGet:
+                path: /
+                port: 8080
+                scheme: HTTP
+            name: webapp
+            ports:
+              - containerPort: 8080
+                protocol: TCP
+            readinessProbe:
+              failureThreshold: 3
+              httpGet:
+                path: /
+                port: 8080
+                scheme: HTTP
+              initialDelaySeconds: 3
+              periodSeconds: 10
+              successThreshold: 1
+              timeoutSeconds: 3
+            resources:
+              limits:
+                cpu: 50m
+                memory: 100Mi
+        restartPolicy: Always
+        terminationGracePeriodSeconds: 30
+    triggers:
+      - imageChangeParams:
+          automatic: true
+          containerNames:
+            - webapp
+          from:
+            kind: ImageStreamTag
+            name: 'webapp:latest'
+        type: ImageChange
+      - type: ConfigChange

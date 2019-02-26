@@ -7,5 +7,7 @@
    },
    "navigator.autoReveal": false,
    "git.decorations.colors": true,
-   "editor.wordWrap": "on"
+   "editor.wordWrap": "on",
+   "editor.showUnused": true,
+   "editor.tabSize": 2
 }
