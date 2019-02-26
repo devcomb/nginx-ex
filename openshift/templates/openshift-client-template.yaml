@@ -69,7 +69,7 @@ objects:
   kind: Route
   metadata:
     openshift.io/host.generated: 'true'
-  name: nginx
+    name: nginx
   spec:
     port:
       targetPort: 8080-tcp
@@ -87,6 +87,7 @@ objects:
       template.alpha.openshift.io/wait-for-ready: 'true'
     labels:
       app: nginx
+      template: nginx
     name: nginx
   spec:
     replicas: 1
@@ -95,8 +96,10 @@ objects:
     strategy:
       type: Rolling
     template:
-      labels:
-        name: nginx
+      metadata:
+        labels:
+          name: nginx
+          deploymentconfig: nginx
       name: nginx
       spec:
         containers:
@@ -148,7 +151,6 @@ objects:
       template.alpha.openshift.io/wait-for-ready: 'true'
     labels:
       app: nodejs-theia
-      template: nodejs-theia
     name: nodejs-theia-development
   spec:
     replicas: 1
@@ -160,7 +162,7 @@ objects:
       metadata:
         labels:
           name: nodejs-theia-development
-        name: nodejs-theia-development
+          deploymentconfig: nodejs-theia-development
       spec:
         containers:
           - env:
@@ -191,52 +193,27 @@ objects:
 - apiVersion: apps.openshift.io/v1
   kind: DeploymentConfig
   metadata:
-    annotations:
-      template.alpha.openshift.io/wait-for-ready: 'true'
     labels:
-      app: webapp
-      template: webapp
+      app: oauth-interface-client
     name: webapp
   spec:
     replicas: 1
     selector:
-      name: webapp
+      deploymentconfig: webapp
     strategy:
       type: Rolling
     template:
       metadata:
         labels:
-          name: webapp
-        name: webapp
+          app: webapp
+          deploymentconfig: webapp
       spec:
         containers:
-            imagePullPolicy: IfNotPresent
-            livenessProbe:
-              failureThreshold: 3
-              httpGet:
-                path: /
-                port: 8080
-                scheme: HTTP
+          - imagePullPolicy: Always
             name: webapp
             ports:
               - containerPort: 8080
                 protocol: TCP
-            readinessProbe:
-              failureThreshold: 3
-              httpGet:
-                path: /
-                port: 8080
-                scheme: HTTP
-              initialDelaySeconds: 3
-              periodSeconds: 10
-              successThreshold: 1
-              timeoutSeconds: 3
-            resources:
-              limits:
-                cpu: 50m
-                memory: 100Mi
-        restartPolicy: Always
-        terminationGracePeriodSeconds: 30
     triggers:
       - imageChangeParams:
           automatic: true
@@ -247,35 +224,158 @@ objects:
             name: 'webapp:latest'
         type: ImageChange
       - type: ConfigChange
-- apiVersion: v1
-  kind: ServiceAccount
+ 
+- apiVersion: build.openshift.io/v1
+  kind: BuildConfig
   metadata:
     annotations:
-      serviceaccounts.openshift.io/oauth-redirecturi.first: "${REDIRECTURI}"
+      template.alpha.openshift.io/wait-for-ready: 'true'
     labels:
-      app: oauth-interface-client
-      template: oauth-interface-client
-    name: oauth-interface-nginx
-
-- apiVersion: v1
-  kind: ServiceAccount
+      app: webapp
+      template: webapp
+    name: webapp
+  spec:
+    output:
+      to:
+        kind: ImageStreamTag
+        name: 'webapp:latest'
+    postCommit:
+      script: npm test
+    resources: {}
+    runPolicy: Serial
+    source:
+      git:
+        ref: ${WEBAPP_GIT_BRANCH}
+        uri: "${WEBAPP_GIT_URL}"
+      type: Git
+    strategy:
+      sourceStrategy:
+        env:
+          - name: NPM_MIRROR
+        forcePull: true
+        from:
+          kind: DockerImage
+          name: 'docker.io/centos/nodejs-8-centos7:latest'
+      type: Source
+    triggers:
+      - type: ConfigChange
+- apiVersion: build.openshift.io/v1
+  kind: BuildConfig
   metadata:
     annotations:
-      serviceaccounts.openshift.io/oauth-redirecturi.first: "${REDIRECTURI}"
+      template.alpha.openshift.io/wait-for-ready: 'true'
     labels:
-      app: oauth-interface
-      template: oauth-interface
-    name: oauth-interface-nginx
+      app: nodejs-theia
+      template: nodejs-theia
+    name: nodejs-theia-development
+  spec:
+    output:
+      to:
+        kind: ImageStreamTag
+        name: 'nodejs-theia-development:latest'
+    source:
+      git:
+        ref: ${DEV_WEBAPP_GIT_BRANCH}
+        uri: "${DEV_WEBAPP_GIT_URL}"
+      type: Git
+    strategy:
+      sourceStrategy:
+        env:
+          - name: GIT_REPO_REF
+            value: ${DEV_WEBAPP_GIT_BRANCH}
+          - name: NPM_MIRROR
+          - name: DEV_MODE
+            value: 'true'
+          - name: GIT_USERNAME
+            value: ${DEV_WEBAPP_GIT_USERNAME}
+          - name: GIT_EMAIL
+            value: ${DEV_WEBAPP_GIT_EMAIL}
+          - name: GIT_TOKEN
+            value: ${DEV_WEBAPP_GIT_TOKEN}
+        forcePull: true
+        from:
+          kind: DockerImage
+          name: 'docker.io/devcomb/theia-openshift:latest'
+      type: Source
+    triggers:
+      - type: ConfigChange
+- apiVersion: build.openshift.io/v1
+  kind: BuildConfig
+  metadata:
+    labels:
+      app: nginx
+    name: nginx
+  spec:
+    output:
+      to:
+        kind: ImageStreamTag
+        name: 'nginx:latest'
+    source:
+      git:
+        ref: development
+        uri: 'https://github.com/devcomb/nginx-ex.git'
+      type: Git
+    strategy:
+      sourceStrategy:
+        env:
+          - name: NGINX_CLIENT
+            value: 'true'
+        from:
+          kind: ImageStreamTag
+          name: 'nginx:1.12'
+          namespace: openshift
+      type: Source
+    triggers:
+      - type: ConfigChange
+- apiVersion: image.openshift.io/v1
+  kind: ImageStream
+  metadata:
+    generation: 1
+    name: nginx
+- apiVersion: image.openshift.io/v1
+  kind: ImageStream
+  metadata:
+    generation: 1
+    name: nodejs-theia-development
+- apiVersion: image.openshift.io/v1
+  kind: ImageStream
+  metadata:
+    generation: 1
+    name: webapp
 
 parameters:
-  - description: Server account redirecturi. This would be a nginx client url 'https://nginx-client-<namespace>.<domain>/oauth/callback'.
-    displayName: redirecturi
-    name: REDIRECTURI
+  - description: Webapp git url.
+    displayName: webappgiturl
+    name: WEBAPP_GIT_URL
     required: true
-    value: 'https://nginx-client-<namespace>.<domain>/oauth/callback'
-  - description: Generate hash for cookie secret.
-    displayName: Cookie Secret
-    from: '[a-z]{20}'
-    generate: expression
-    name: COOKIE_SECRET
+    value: 'https://github.com/sclorg/nodejs-ex.git'
+  - description: Webapp git branch.
+    displayName: webappgitbranch
+    name: WEBAPP_GIT_BRANCH
     required: true
+    value: 'master'
+  - description: Development webapp git url.
+    displayName: dev_webappgiturl
+    name: DEV_WEBAPP_GIT_URL
+    required: true
+    value: 'https://github.com/sclorg/nodejs-ex.git'
+  - description: Development webapp git branch.
+    displayName: dev_webappgitbranch
+    name: DEV_WEBAPP_GIT_BRANCH
+    required: true
+    value: 'master'
+  - description: Github authentication token for repo push.
+    displayName: dev_webappgittoken
+    name: DEV_WEBAPP_GIT_TOKEN
+    required: false
+    value: ''
+  - description: Github authentication email for repo push.
+    displayName: dev_webappgitemail
+    name: DEV_WEBAPP_GIT_EMAIL
+    required: false
+    value: ''
+  - description: Github authentication username for repo push.
+    displayName: dev_webappgitusername
+    name: DEV_WEBAPP_GIT_USERNAME
+    required: false
+    value: ''
