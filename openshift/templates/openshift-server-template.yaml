@@ -158,6 +158,7 @@ items:
           name: oauth-interface-proxy
           deploymentconfig: oauth-interface-proxy
       spec:
+        serviceAccountName: oauth-interface-nginx
         containers:
         - args:
           - --http-address=:4180
@@ -310,8 +311,6 @@ items:
       weight: 100
     wildcardPolicy: None
 - apiVersion: v1
-  imagePullSecrets:
-    - name: oauth-interface-nginx-dockercfg-2bxx8
   kind: ServiceAccount
   metadata:
     annotations:
