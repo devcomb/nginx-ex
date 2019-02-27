@@ -75,8 +75,8 @@ app.get('/', function (req, res) {
         sa_token: req.headers['authorization'],
         namespace: req.headers['x-namespace']
     };
-    console.log("statusCode: ", req.statusCode); // <======= Here's the status code
-    // console.log("headers: ", req.headers);
+    // console.log("statusCode: ", req.statusCode); // <======= Here's the status code
+    console.log("headers: ", req.headers);
     if(checkHeaders(headers,res)){
         var options = setOptions(headers);
         https.get(options, (resInternal) => {
