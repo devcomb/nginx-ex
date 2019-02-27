@@ -128,8 +128,8 @@ app.get('/', function (req, res) {
             }
             else{
                 res.status(resInternal.statusCode).end(`Message: ${resInternal.statusMessage}`);
-                // console.error("statusCode: ", resInternal.statusCode); // <======= Here's the status code
-                // console.error("headers: ", resInternal.headers);
+                console.error("resInternal statusCode: ", resInternal.statusCode); // <======= Here's the status code
+                console.error("resInternal headers: ", resInternal.headers);
             }
             }).on('error', (e) => {
                 res.statusCode = 400;
