@@ -76,14 +76,18 @@ app.get('/', function (req, res) {
         namespace: req.headers['x-namespace']
     };
     // console.log("statusCode: ", req.statusCode); // <======= Here's the status code
-    console.log("headers: ", req.headers);
+    console.log("headers: ",  req.headers);
     if(checkHeaders(headers,res)){
+        console.log("Headers Checked.");
         var options = setOptions(headers);
+        var optionsJSON = JSON.stringify(options);
+
+        console.log("Options set. Making internal request to openshift backend.");
+        console.log(`Options: ${optionsJSON}`);
         https.get(options, (resInternal) => {
             let body = '';
             if(resInternal.statusCode==200){
                 resInternal.on('data', (chunk) => {
-                   console.log(`chunk: ${chunk}`);
                     try {
                         body += chunk;
                     } catch(err) {
@@ -130,8 +134,8 @@ app.get('/', function (req, res) {
             }
             else{
                 res.status(resInternal.statusCode).end(`Message: ${resInternal.statusMessage}`);
-                console.error("resInternal statusCode: ", resInternal.statusCode); // <======= Here's the status code
-                console.error("resInternal headers: ", resInternal.headers);
+                // console.error("resInternal statusCode: ", resInternal.statusCode); // <======= Here's the status code
+                // console.error("resInternal headers: ", resInternal.headers);
             }
             }).on('error', (e) => {
                 res.statusCode = 400;
@@ -153,6 +157,8 @@ function checkHeaders(headers,res){
     var badkeys={};
     var req_headers = ['os_console_host','os_console_port','subject','sa_token','namespace'];
     var keys = _.keys(headers);
+    var headersJSON = JSON.stringify(headers)
+    console.log("headers: ", headers);
     _.each(keys,function(key) { 
         // console.log("key: ", key);
         // console.log(`headers[${key}]: `, headers[key]);
@@ -163,7 +169,7 @@ function checkHeaders(headers,res){
             }
         }
     });
-
+    console.log(`Message: Header variable(s) '${headers}'.`);
     if(!headersSet){
         res.statusCode = 400;
         var keysStr='';
@@ -171,6 +177,7 @@ function checkHeaders(headers,res){
             keysStr=keysStr+key+",";
         }
         keysStr = keysStr.slice(0, -1);
+        
         res.end(`Message: Header variable(s) '${keysStr}' is undefined.`);
     }
     if(!hosts_whitelisted.includes(headers.os_console_host) ){
