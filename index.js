@@ -83,6 +83,7 @@ app.get('/', function (req, res) {
             let body = '';
             if(resInternal.statusCode==200){
                 resInternal.on('data', (chunk) => {
+                   console.log(`chunk: ${chunk}`);
                     try {
                         body += chunk;
                     } catch(err) {
@@ -90,6 +91,7 @@ app.get('/', function (req, res) {
                     }
                 });
                 resInternal.on('end', () => {
+                  
                     var authorized = false;
                     let group = '';
                     try {
@@ -139,6 +141,7 @@ app.get('/', function (req, res) {
                 if(e.code === 'ECONNREFUSED'){
                     res.statusCode = 403;
                 }
+                console.error("Error: ", e.message);
                 res.end(`Error: ${e.message}`);
             });
     }
