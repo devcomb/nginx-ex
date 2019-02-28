@@ -39,8 +39,6 @@ objects:
   subjects:
     - kind: User
       name: ${DEV_USERNAMES}
-    - kind: Group
-      name: developer
 parameters:
   - description: Usernames added to developer group
     displayName: dev_usernames
