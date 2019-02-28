@@ -86,8 +86,8 @@ objects:
       description: Nginx proxy with authentication based routing
       template.alpha.openshift.io/wait-for-ready: 'true'
     labels:
-      app: nginx
-      template: nginx
+      app: nodejs-theia-development
+      template: nodejs-theia-development
     name: nginx
   spec:
     replicas: 1
@@ -150,7 +150,7 @@ objects:
     annotations:
       template.alpha.openshift.io/wait-for-ready: 'true'
     labels:
-      app: nodejs-theia
+      app: nodejs-theia-development
     name: nodejs-theia-development
   spec:
     replicas: 1
@@ -194,7 +194,7 @@ objects:
   kind: DeploymentConfig
   metadata:
     labels:
-      app: oauth-interface-client
+      app: nodejs-theia-development
     name: webapp
   spec:
     replicas: 1
@@ -320,9 +320,8 @@ objects:
           - name: NGINX_CLIENT
             value: 'true'
         from:
-          kind: ImageStreamTag
-          name: 'nginx:1.12'
-          namespace: openshift
+          kind: DockerImage
+          name: centos/nginx-112-centos7
       type: Source
     triggers:
       - type: ConfigChange

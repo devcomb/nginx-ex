@@ -142,7 +142,7 @@ objects:
           resources:
             limits:
               cpu: 50m
-              memory: 50Mi
+              memory: 100Mi
             requests:
               cpu: 50m
     triggers:
@@ -230,9 +230,8 @@ objects:
     strategy:
       sourceStrategy:
         from:
-          kind: ImageStreamTag
-          name: nginx:1.12
-          namespace: openshift
+          kind: DockerImage
+          name: centos/nginx-112-centos7
       type: Source
     triggers:
     - imageChangeParams:

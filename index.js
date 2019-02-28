@@ -99,8 +99,10 @@ app.get('/', function (req, res) {
                             if(value.userNames){
                                 //todo allow multiple groups
                                 // console.log("value: " + JSON.stringify(value));
-                                if(_.contains(value.userNames,headers.subject) && (_.contains(value.groupNames,headers.group) || ! headers.group ) ){ 
-                                  
+                                if( _.contains(value.userNames,headers.subject) && ( _.contains(value.groupNames,headers.group) 
+                                  // Need to provide additional header to test role. For right now providing group
+                                  || (_.contains(value.roleRef.name,headers.group) )
+                                  || ! headers.group ) ){ 
                                     group = headers.group;
                                     authorized = true;
                                 }
