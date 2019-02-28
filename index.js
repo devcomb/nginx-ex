@@ -98,7 +98,9 @@ app.get('/', function (req, res) {
                         _.each(data.items,(value, key, list) => {
                             if(value.userNames){
                                 //todo allow multiple groups
+                                // console.log("value: " + JSON.stringify(value));
                                 if(_.contains(value.userNames,headers.subject) && (_.contains(value.groupNames,headers.group) || ! headers.group ) ){ 
+                                  
                                     group = headers.group;
                                     authorized = true;
                                 }

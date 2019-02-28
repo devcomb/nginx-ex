@@ -363,16 +363,18 @@ objects:
         - watch
         - list
 - apiVersion: rbac.authorization.k8s.io/v1
-  kind: RoleBinding
+  kind: Role
   metadata:
-    name: group_reader_rolebinding
-  roleRef:
-    apiGroup: rbac.authorization.k8s.io
-    kind: Role
-    name: group-reader
-  subjects:
-    - kind: ServiceAccount
-      name: default
+    name: developer
+  rules:
+  - apiGroups:
+      - ''
+    resources:
+      - pods
+    verbs:
+      - get
+      - watch
+      - list
 
 parameters:
   - description: Webapp git url.
@@ -403,10 +405,5 @@ parameters:
   - description: Github authentication email for repo push.
     displayName: dev_webappgitemail
     name: DEV_WEBAPP_GIT_EMAIL
-    required: false
-    value: ''
-  - description: Github authentication username for repo push.
-    displayName: dev_webappgitusername
-    name: DEV_WEBAPP_GIT_USERNAME
     required: false
     value: ''
