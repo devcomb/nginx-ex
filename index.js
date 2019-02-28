@@ -67,6 +67,7 @@ app.get('/', function (req, res) {
         res.status(400).send('Header "Accept" must be set to application/json.');
         return;
     }
+    
     var headers = { 
         os_console_host: req.headers['x-oauth-host'],
         os_console_port: req.headers['x-oauth-port'],
@@ -75,6 +76,9 @@ app.get('/', function (req, res) {
         sa_token: req.headers['authorization'],
         namespace: req.headers['x-namespace']
     };
+    if(headers.os_console_port == "None"){
+      headers.os_console_port="443";
+    }
     // console.log("statusCode: ", req.statusCode); // <======= Here's the status code
     // console.log("headers: ",  req.headers);
     if(checkHeaders(headers,res)){
@@ -98,7 +102,7 @@ app.get('/', function (req, res) {
                         _.each(data.items,(value, key, list) => {
                             if(value.userNames){
                                 //todo allow multiple groups
-                                // console.log("value: " + JSON.stringify(value));
+                                console.log("value: " + JSON.stringify(value));
                                 if( _.contains(value.userNames,headers.subject) && ( _.contains(value.groupNames,headers.group) 
                                   // Need to provide additional header to test role. For right now providing group
                                   || (_.contains(value.roleRef.name,headers.group) )
@@ -166,7 +170,7 @@ function checkHeaders(headers,res){
             }
         }
     });
-    console.log(`Message: Header variable(s) '${headers}'.`);
+    console.log(`Message: Header variable(s) '${JSON.stringify(headers)}'.`);
     if(!headersSet){
         res.statusCode = 400;
         var keysStr='';
@@ -178,11 +182,13 @@ function checkHeaders(headers,res){
     }
     if(!hosts_whitelisted.includes(headers.os_console_host) ){
         res.statusCode = 404;
+        console.log(`Message: Header variable(s) 'x-oauth-host' is not whitelisted.`);
         res.end(`Message: Header variable(s) 'x-oauth-host' is not whitelisted.`);
         headersSet=false;
     }
     if(!ports_whitelisted.includes(headers.os_console_port) ){
         res.statusCode = 403;
+        console.log(`Message: Header variable(s) 'x-oauth-port' is not whitelisted.`);
         res.end(`Message: Header variable(s) 'x-oauth-port' is not whitelisted.`);
         headersSet=false;
     }
